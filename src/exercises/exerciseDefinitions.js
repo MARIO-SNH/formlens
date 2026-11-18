@@ -1,373 +1,201 @@
-// FormLens - Exercise Definitions
-// Defines all 10 supported exercises.
-
-export const exerciseDefinitions = {
-
-    // =========================
-    // CHEST EXERCISES
-    // =========================
-
-    pushups: {
+export const exerciseDefinitions = [
+    {
         id: "pushups",
         name: "Push-ups",
         muscleGroup: "Chest",
-        preferredView: "Side view",
-
-        primaryJoints: [
-            "leftElbow",
-            "rightElbow",
-            "leftShoulder",
-            "rightShoulder"
-        ],
-
+        preferredView: "side",
+        primaryJoints: ["shoulder", "elbow"],
         analysisFeatures: [
             "elbowRangeOfMotion",
             "bodyAlignment",
             "hipSag",
-            "shoulderSymmetry",
             "movementTempo"
         ],
-
         feedbackChecks: [
-            "Maintain a straight body line",
-            "Avoid letting your hips sag",
-            "Keep your elbows controlled"
+            "bodyAlignment",
+            "hipSag",
+            "elbowRangeOfMotion"
         ],
-
-        angleThresholds: {
-            bottom: 90,
-            top: 160
-        }
+        angleThresholds: { bottom: 90, top: 160 }
     },
-
-    widePushups: {
+    {
         id: "widePushups",
         name: "Wide-grip Push-ups",
         muscleGroup: "Chest",
-        preferredView: "Front and side view",
-
-        primaryJoints: [
-            "leftElbow",
-            "rightElbow",
-            "leftShoulder",
-            "rightShoulder"
-        ],
-
+        preferredView: "front",
+        primaryJoints: ["shoulder", "elbow"],
         analysisFeatures: [
             "elbowRangeOfMotion",
             "shoulderSymmetry",
-            "bodyAlignment",
-            "movementTempo"
+            "bodyAlignment"
         ],
-
         feedbackChecks: [
-            "Keep both arms symmetrical",
-            "Maintain a straight body line",
-            "Control your lowering movement"
+            "shoulderSymmetry",
+            "bodyAlignment"
         ],
-
-        angleThresholds: {
-            bottom: 90,
-            top: 160
-        }
+        angleThresholds: { bottom: 90, top: 160 }
     },
-
-
-    // =========================
-    // BACK EXERCISES
-    // =========================
-
-    bentOverRows: {
+    {
         id: "bentOverRows",
         name: "Bent-over Rows",
         muscleGroup: "Back",
-        preferredView: "Side view",
-
-        primaryJoints: [
-            "leftElbow",
-            "rightElbow",
-            "leftHip",
-            "rightHip"
-        ],
-
+        preferredView: "side",
+        primaryJoints: ["elbow", "hip"],
         analysisFeatures: [
+            "elbowRangeOfMotion",
+            "trunkInclination",
+            "torsoStability"
+        ],
+        feedbackChecks: [
             "elbowTravel",
             "torsoStability",
-            "shoulderSymmetry",
-            "movementTempo"
+            "trunkInclination"
         ],
-
-        feedbackChecks: [
-            "Keep your torso stable",
-            "Avoid excessive body swinging",
-            "Pull both arms evenly"
-        ],
-
-        angleThresholds: {
-            bottom: 80,
-            top: 160
-        }
+        angleThresholds: { bottom: 150, top: 70 }
     },
-
-    reverseFly: {
+    {
         id: "reverseFly",
         name: "Reverse Fly",
         muscleGroup: "Back",
-        preferredView: "Front view",
-
-        primaryJoints: [
-            "leftShoulder",
-            "rightShoulder",
-            "leftElbow",
-            "rightElbow"
-        ],
-
+        preferredView: "front",
+        primaryJoints: ["shoulder", "elbow"],
         analysisFeatures: [
             "armElevation",
             "shoulderSymmetry",
-            "torsoStability",
-            "movementTempo"
+            "torsoStability"
         ],
-
         feedbackChecks: [
-            "Keep both arms moving evenly",
-            "Avoid excessive torso movement",
-            "Control the arm movement"
+            "armElevation",
+            "shoulderHiking",
+            "shoulderSymmetry"
         ],
-
-        angleThresholds: {
-            bottom: 30,
-            top: 100
-        }
+        angleThresholds: { bottom: 40, top: 90 }
     },
-
-
-    // =========================
-    // SHOULDER EXERCISES
-    // =========================
-
-    shoulderPress: {
+    {
         id: "shoulderPress",
         name: "Shoulder Press",
         muscleGroup: "Shoulders",
-        preferredView: "Front view",
-
-        primaryJoints: [
-            "leftElbow",
-            "rightElbow",
-            "leftShoulder",
-            "rightShoulder"
-        ],
-
+        preferredView: "front",
+        primaryJoints: ["shoulder", "elbow"],
         analysisFeatures: [
             "elbowExtension",
-            "armSymmetry",
-            "torsoCompensation",
-            "movementTempo"
+            "shoulderSymmetry",
+            "torsoStability"
         ],
-
         feedbackChecks: [
-            "Press both arms evenly",
-            "Avoid excessive back arching",
-            "Control the lowering movement"
+            "elbowPosition",
+            "shoulderSymmetry",
+            "torsoCompensation"
         ],
-
-        angleThresholds: {
-            bottom: 80,
-            top: 160
-        }
+        angleThresholds: { bottom: 80, top: 160 }
     },
-
-    lateralRaises: {
+    {
         id: "lateralRaises",
         name: "Lateral Raises",
         muscleGroup: "Shoulders",
-        preferredView: "Front view",
-
-        primaryJoints: [
-            "leftShoulder",
-            "rightShoulder",
-            "leftElbow",
-            "rightElbow"
-        ],
-
+        preferredView: "front",
+        primaryJoints: ["shoulder", "elbow"],
         analysisFeatures: [
             "armElevation",
             "shoulderHiking",
-            "elbowPosition",
             "armSymmetry"
         ],
-
         feedbackChecks: [
-            "Raise both arms evenly",
-            "Avoid shrugging your shoulders",
-            "Keep the movement controlled"
+            "armElevation",
+            "shoulderHiking",
+            "armSymmetry"
         ],
-
-        angleThresholds: {
-            bottom: 20,
-            top: 90
-        }
+        angleThresholds: { bottom: 10, top: 80 }
     },
-
-
-    // =========================
-    // ARM EXERCISES
-    // =========================
-
-    bicepCurls: {
+    {
         id: "bicepCurls",
         name: "Bicep Curls",
         muscleGroup: "Arms",
-        preferredView: "Front view",
-
-        primaryJoints: [
-            "leftElbow",
-            "rightElbow"
-        ],
-
+        preferredView: "side",
+        primaryJoints: ["elbow"],
         analysisFeatures: [
             "elbowRangeOfMotion",
             "upperArmStability",
-            "armSymmetry",
-            "movementTempo"
+            "torsoCompensation"
         ],
-
         feedbackChecks: [
-            "Keep your upper arms stable",
-            "Avoid swinging your body",
-            "Curl both arms evenly"
+            "upperArmStability",
+            "torsoCompensation"
         ],
-
-        angleThresholds: {
-            bottom: 60,
-            top: 150
-        }
+        angleThresholds: { bottom: 55, top: 150 }
     },
-
-    overheadTricepExtensions: {
+    {
         id: "overheadTricepExtensions",
         name: "Overhead Tricep Extensions",
         muscleGroup: "Arms",
-        preferredView: "Side view",
-
-        primaryJoints: [
-            "leftElbow",
-            "rightElbow",
-            "leftShoulder",
-            "rightShoulder"
-        ],
-
+        preferredView: "side",
+        primaryJoints: ["elbow", "shoulder"],
         analysisFeatures: [
-            "elbowRangeOfMotion",
+            "elbowExtension",
             "upperArmStability",
-            "trunkCompensation",
-            "armSymmetry"
+            "torsoStability"
         ],
-
         feedbackChecks: [
-            "Keep your upper arms steady",
-            "Avoid arching your back",
-            "Extend your elbows in a controlled way"
+            "elbowPosition",
+            "elbowExtension",
+            "torsoStability"
         ],
-
-        angleThresholds: {
-            bottom: 70,
-            top: 160
-        }
+        angleThresholds: { bottom: 150, top: 70 }
     },
-
-
-    // =========================
-    // LEG EXERCISES
-    // =========================
-
-    squats: {
+    {
         id: "squats",
         name: "Squats",
         muscleGroup: "Legs",
-        preferredView: "Side and front view",
-
-        primaryJoints: [
-            "leftKnee",
-            "rightKnee",
-            "leftHip",
-            "rightHip"
-        ],
-
+        preferredView: "side",
+        primaryJoints: ["knee", "hip"],
         analysisFeatures: [
             "kneeAlignment",
             "squatDepth",
             "trunkInclination",
-            "leftRightSymmetry",
-            "movementTempo",
+            "heelLift",
+            "movementTempo"
+        ],
+        feedbackChecks: [
+            "kneeAlignment",
+            "squatDepth",
+            "trunkInclination",
             "heelLift"
         ],
-
-        feedbackChecks: [
-            "Keep your knees aligned with your feet",
-            "Maintain a controlled squat depth",
-            "Keep your torso stable"
-        ],
-
-        angleThresholds: {
-            bottom: 90,
-            top: 160
-        }
+        angleThresholds: { bottom: 90, top: 160 }
     },
-
-    lunges: {
+    {
         id: "lunges",
         name: "Lunges",
         muscleGroup: "Legs",
-        preferredView: "Front and side view",
-
-        primaryJoints: [
-            "leftKnee",
-            "rightKnee",
-            "leftHip",
-            "rightHip"
-        ],
-
+        preferredView: "side",
+        primaryJoints: ["knee", "hip"],
         analysisFeatures: [
             "frontKneeAlignment",
             "lungeDepth",
             "hipStability",
-            "strideConsistency",
-            "movementTempo"
+            "strideConsistency"
         ],
-
         feedbackChecks: [
-            "Keep your front knee aligned",
-            "Maintain a stable upper body",
-            "Use a controlled stride"
+            "frontKneeAlignment",
+            "lungeDepth",
+            "hipStability"
         ],
-
-        angleThresholds: {
-            bottom: 90,
-            top: 160
-        }
+        angleThresholds: { bottom: 90, top: 160 }
     }
-};
+];
 
-
-// Returns all available exercises.
 export function getAllExercises() {
-    return Object.values(exerciseDefinitions);
+    return exerciseDefinitions;
 }
 
-
-// Returns exercises belonging to a muscle group.
 export function getExercisesByMuscleGroup(muscleGroup) {
-    return getAllExercises().filter(
-        exercise =>
-            exercise.muscleGroup.toLowerCase() ===
-            muscleGroup.toLowerCase()
+    return exerciseDefinitions.filter(
+        exercise => exercise.muscleGroup === muscleGroup
     );
 }
 
-
-// Returns one exercise using its ID.
-export function getExerciseById(exerciseId) {
-    return exerciseDefinitions[exerciseId] || null;
+export function getExerciseById(id) {
+    return exerciseDefinitions.find(
+        exercise => exercise.id === id
+    ) || null;
 }

@@ -1,180 +1,125 @@
-// FormLens - Exercise Feedback Engine
-
-// Maps detected movement problems to corrective instructions.
-
-const feedbackRules = {
-
-    // Squat feedback
+export const feedbackRules = {
     kneeAlignment: {
-        message: "Your knees are moving inward.",
-        suggestion: "Keep your knees aligned with your feet."
+        message: "Your knees may be moving inward.",
+        suggestion: "Try to keep your knees aligned with your toes."
     },
-
     squatDepth: {
         message: "Your squat depth may be limited.",
-        suggestion: "Work towards a comfortable and controlled squat depth."
+        suggestion: "Work towards a comfortable, controlled squat depth."
     },
-
     trunkInclination: {
-        message: "Your torso is leaning excessively.",
+        message: "Your torso angle may need adjustment.",
         suggestion: "Maintain a stable torso throughout the movement."
     },
-
     heelLift: {
         message: "Your heels appear to be lifting.",
-        suggestion: "Try to maintain contact between your heels and the floor."
+        suggestion: "Try to keep your heels grounded."
     },
-
-    // Push-up feedback
     bodyAlignment: {
         message: "Your body alignment needs attention.",
-        suggestion: "Maintain a straight line from your shoulders to your ankles."
+        suggestion: "Keep your body in a stable, straight position."
     },
-
     hipSag: {
-        message: "Your hips appear to be sagging.",
+        message: "Your hips may be dropping.",
         suggestion: "Engage your core and maintain a stable body position."
     },
-
-    // Arm exercise feedback
     elbowRangeOfMotion: {
         message: "Your elbow movement range may be limited.",
         suggestion: "Use a comfortable and controlled range of motion."
     },
-
     upperArmStability: {
-        message: "Your upper arms are moving excessively.",
-        suggestion: "Keep your upper arms stable during the exercise."
+        message: "Your upper arm appears to be moving excessively.",
+        suggestion: "Keep your upper arm stable while moving your forearm."
     },
-
-    // General movement feedback
     shoulderSymmetry: {
-        message: "Your shoulders are moving unevenly.",
+        message: "Your shoulders appear uneven.",
+        suggestion: "Try to move both arms evenly."
+    },
+    armSymmetry: {
+        message: "Your arms appear to be moving unevenly.",
+        suggestion: "Focus on matching the movement on both sides."
+    },
+    leftRightSymmetry: {
+        message: "A left-right movement imbalance was detected.",
         suggestion: "Try to maintain balanced movement on both sides."
     },
-
-    armSymmetry: {
-        message: "Your arms are moving unevenly.",
-        suggestion: "Try to move both arms with similar control."
-    },
-
-    leftRightSymmetry: {
-        message: "An imbalance between your left and right sides was detected.",
-        suggestion: "Focus on controlled and balanced movement."
-    },
-
     torsoStability: {
-        message: "Your torso movement is inconsistent.",
-        suggestion: "Keep your upper body stable throughout the exercise."
+        message: "Your torso appears unstable.",
+        suggestion: "Keep your torso controlled throughout the exercise."
     },
-
     torsoCompensation: {
-        message: "Your torso appears to be compensating for the movement.",
-        suggestion: "Reduce excessive body movement and use controlled motion."
+        message: "Your torso may be compensating for the movement.",
+        suggestion: "Reduce momentum and focus on controlled movement."
     },
-
     movementTempo: {
-        message: "Your movement tempo is inconsistent.",
-        suggestion: "Perform each repetition at a controlled pace."
+        message: "Your movement tempo may be inconsistent.",
+        suggestion: "Use a steady and controlled pace."
     },
-
     elbowTravel: {
-        message: "Your elbow movement needs attention.",
-        suggestion: "Focus on controlled elbow movement."
+        message: "Your elbows may be travelling too far.",
+        suggestion: "Keep your elbow path controlled."
     },
-
     armElevation: {
-        message: "Your arm elevation needs attention.",
-        suggestion: "Raise your arms smoothly without excessive shoulder movement."
+        message: "Your arm elevation may need adjustment.",
+        suggestion: "Raise your arms in a controlled and comfortable range."
     },
-
     shoulderHiking: {
         message: "Your shoulders appear to be shrugging.",
-        suggestion: "Keep your shoulders relaxed while raising your arms."
+        suggestion: "Keep your shoulders relaxed and away from your ears."
     },
-
     elbowPosition: {
-        message: "Your elbow position needs attention.",
-        suggestion: "Maintain a comfortable and consistent elbow position."
+        message: "Your elbow position may need adjustment.",
+        suggestion: "Keep your elbows in a stable position."
     },
-
     elbowExtension: {
-        message: "Your elbow extension appears limited.",
-        suggestion: "Extend your arms smoothly without forcing the joints."
+        message: "Your elbow extension may be incomplete.",
+        suggestion: "Work through a comfortable range without forcing the joint."
     },
-
     frontKneeAlignment: {
-        message: "Your front knee alignment needs attention.",
+        message: "Your front knee alignment may need attention.",
         suggestion: "Keep your front knee aligned with your foot."
     },
-
     lungeDepth: {
-        message: "Your lunge depth may be limited.",
-        suggestion: "Use a comfortable and controlled lunge depth."
+        message: "Your lunge depth may be inconsistent.",
+        suggestion: "Use a controlled and comfortable lunge depth."
     },
-
     hipStability: {
         message: "Your hips appear unstable.",
-        suggestion: "Keep your hips steady throughout the movement."
+        suggestion: "Keep your hips level and controlled."
     },
-
     strideConsistency: {
-        message: "Your stride appears inconsistent.",
-        suggestion: "Maintain a controlled and consistent stride."
+        message: "Your stride length appears inconsistent.",
+        suggestion: "Aim for a consistent and controlled stride."
     }
 };
 
-
-/**
- * Generates corrective feedback from detected deviations.
- *
- * @param {Array<string>} deviations
- * @returns {Object}
- */
-
 export function generateFeedback(deviations = []) {
-
-    if (!Array.isArray(deviations)) {
-        return {
-            warnings: [],
-            suggestions: [],
-            summary: "Unable to generate feedback."
-        };
-    }
-
     const warnings = [];
     const suggestions = [];
 
     for (const deviation of deviations) {
-
         const rule = feedbackRules[deviation];
 
-        if (!rule) {
-            continue;
-        }
+        if (!rule) continue;
 
-        if (!warnings.includes(rule.message)) {
-            warnings.push(rule.message);
-        }
-
-        if (!suggestions.includes(rule.suggestion)) {
-            suggestions.push(rule.suggestion);
-        }
+        warnings.push(rule.message);
+        suggestions.push(rule.suggestion);
     }
+
+    const uniqueWarnings = [...new Set(warnings)];
+    const uniqueSuggestions = [...new Set(suggestions)];
 
     let summary;
 
-    if (warnings.length === 0) {
-        summary = deviations.length === 0
-            ? "No movement deviations were reported."
-            : "No matching feedback rules were found.";
+    if (uniqueWarnings.length === 0) {
+        summary = "No listed form deviations were provided for assessment.";
     } else {
-        summary = `${warnings.length} movement issue(s) identified.`;
+        summary = `${uniqueWarnings.length} form observation(s) identified.`;
     }
 
     return {
-        warnings,
-        suggestions,
+        warnings: uniqueWarnings,
+        suggestions: uniqueSuggestions,
         summary
     };
 }
