@@ -1,45 +1,75 @@
+
+function isValidPoint(point) {
+  return (
+    point &&
+    Number.isFinite(point.x) &&
+    Number.isFinite(point.y)
+  );
+}
+
 export function calculateAngle(A, B, C) {
-    if (!A || !B || !C) return null;
+  if (
+    !isValidPoint(A) ||
+    !isValidPoint(B) ||
+    !isValidPoint(C)
+  ) {
+    return null;
+  }
 
-    const vectorBA = {
-        x: A.x - B.x,
-        y: A.y - B.y,
-        z: (A.z || 0) - (B.z || 0)
-    };
+  const vectorBA = {
+    x: A.x - B.x,
+    y: A.y - B.y,
+    z: Number.isFinite(A.z) && Number.isFinite(B.z)
+      ? A.z - B.z
+      : 0,
+  };
 
-    const vectorBC = {
-        x: C.x - B.x,
-        y: C.y - B.y,
-        z: (C.z || 0) - (B.z || 0)
-    };
+  const vectorBC = {
+    x: C.x - B.x,
+    y: C.y - B.y,
+    z: Number.isFinite(C.z) && Number.isFinite(B.z)
+      ? C.z - B.z
+      : 0,
+  };
 
-    const dotProduct =
-        vectorBA.x * vectorBC.x +
-        vectorBA.y * vectorBC.y +
-        vectorBA.z * vectorBC.z;
+  const dotProduct =
+    vectorBA.x * vectorBC.x +
+    vectorBA.y * vectorBC.y +
+    vectorBA.z * vectorBC.z;
 
-    const magnitudeBA = Math.sqrt(
-        vectorBA.x ** 2 +
-        vectorBA.y ** 2 +
-        vectorBA.z ** 2
-    );
+  const magnitudeBA = Math.hypot(
+    vectorBA.x,
+    vectorBA.y,
+    vectorBA.z
+  );
 
-    const magnitudeBC = Math.sqrt(
-        vectorBC.x ** 2 +
-        vectorBC.y ** 2 +
-        vectorBC.z ** 2
-    );
+  const magnitudeBC = Math.hypot(
+    vectorBC.x,
+    vectorBC.y,
+    vectorBC.z
+  );
 
-    if (magnitudeBA === 0 || magnitudeBC === 0) {
-        return null;
-    }
+  if (
+    magnitudeBA < 1e-8 ||
+    magnitudeBC < 1e-8
+  ) {
+    return null;
+  }
 
-    let cosineAngle =
-        dotProduct / (magnitudeBA * magnitudeBC);
+  const cosine =
+    dotProduct / (magnitudeBA * magnitudeBC);
 
-    cosineAngle = Math.max(-1, Math.min(1, cosineAngle));
+  const clampedCosine = Math.max(
+    -1,
+    Math.min(1, cosine)
+  );
 
-    const angleRadians = Math.acos(cosineAngle);
+  const radians = Math.acos(clampedCosine);
+  const degrees = radians * (180 / Math.PI);
 
-    return Math.round(angleRadians * (180 / Math.PI));
+  if (!Number.isFinite(degrees)) {
+    return null;
+  }
+
+  return Number(degrees.toFixed(1));
 }

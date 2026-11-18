@@ -10,43 +10,116 @@ import {
 import { calculateAngle } from '../biomechanics/angleCalculator';
 import { createRepCounter } from '../biomechanics/movementAnalyzer';
 import { evaluateExerciseForm } from '../biomechanics/exerciseRules';
+import { smoothLandmarks } from '../biomechanics/landmarkSmoothing';
 
 import SkeletonOverlay from './SkeletonOverlay';
 import JointAngleDisplay from './JointAngleDisplay';
 
-const EXERCISE_IDS = {
-  pushups: 'pushups',
-  widegrippushups: 'widePushups',
-  bentoverrows: 'bentOverRows',
-  reversefly: 'reverseFly',
-  shoulderpress: 'shoulderPress',
-  lateralraises: 'lateralRaises',
-  bicepcurls: 'bicepCurls',
-  overheadtricepextensions: 'overheadTricepExtensions',
-  squats: 'squats',
-  lunges: 'lunges',
+const EXERCISES = {
+  pushups: {
+    id: 'pushups',
+    name: 'Push-ups',
+    bottom: 100,
+    top: 160,
+    metric: 'elbow',
+    cameraView: 'side',
+    instruction: 'Stand side-on to the camera. Keep your shoulders, hips and ankles visible.',
+  },
+  widegrippushups: {
+    id: 'widePushups',
+    name: 'Wide-grip Push-ups',
+    bottom: 100,
+    top: 160,
+    metric: 'elbow',
+    cameraView: 'front',
+    instruction: 'Face the camera and keep both arms visible.',
+  },
+  bentoverrows: {
+    id: 'bentOverRows',
+    name: 'Bent-over Rows',
+    bottom: 100,
+    top: 155,
+    metric: 'elbow',
+    cameraView: 'side',
+    instruction: 'Stand side-on and keep your back and arms visible.',
+  },
+  reversefly: {
+    id: 'reverseFly',
+    name: 'Reverse Fly',
+    bottom: 25,
+    top: 75,
+    metric: 'arm',
+    cameraView: 'front',
+    instruction: 'Face the camera and keep both arms visible.',
+  },
+  shoulderpress: {
+    id: 'shoulderPress',
+    name: 'Shoulder Press',
+    bottom: 105,
+    top: 155,
+    metric: 'elbow',
+    cameraView: 'front',
+    instruction: 'Face the camera and keep your upper body visible.',
+  },
+  lateralraises: {
+    id: 'lateralRaises',
+    name: 'Lateral Raises',
+    bottom: 20,
+    top: 75,
+    metric: 'arm',
+    cameraView: 'front',
+    instruction: 'Face the camera and keep both arms and shoulders visible.',
+  },
+  bicepcurls: {
+    id: 'bicepCurls',
+    name: 'Bicep Curls',
+    bottom: 70,
+    top: 150,
+    metric: 'elbow',
+    cameraView: 'side',
+    instruction: 'Stand side-on and keep your shoulder, elbow and wrist visible.',
+  },
+  overheadtricepextensions: {
+    id: 'overheadTricepExtensions',
+    name: 'Overhead Tricep Extensions',
+    bottom: 105,
+    top: 155,
+    metric: 'elbow',
+    cameraView: 'side',
+    instruction: 'Stand side-on and keep your upper arm and elbow visible.',
+  },
+  squats: {
+    id: 'squats',
+    name: 'Squats',
+    bottom: 110,
+    top: 160,
+    metric: 'knee',
+    cameraView: 'side',
+    instruction: 'Stand side-on. Keep your hip, knee, ankle and foot visible.',
+  },
+  lunges: {
+    id: 'lunges',
+    name: 'Lunges',
+    bottom: 100,
+    top: 160,
+    metric: 'knee',
+    cameraView: 'side',
+    instruction: 'Stand side-on and keep your hips, knees and ankles visible.',
+  },
 };
 
-const EXERCISE_CONFIG = {
-  pushups: { bottom: 100, top: 160, metric: 'elbow', cameraView: 'side' },
-  widegrippushups: { bottom: 100, top: 160, metric: 'elbow', cameraView: 'front' },
-  bentoverrows: { bottom: 100, top: 155, metric: 'elbow', cameraView: 'side' },
-  reversefly: { bottom: 25, top: 75, metric: 'arm', cameraView: 'front' },
-  shoulderpress: { bottom: 105, top: 155, metric: 'elbow', cameraView: 'front' },
-  lateralraises: { bottom: 20, top: 75, metric: 'arm', cameraView: 'front' },
-  bicepcurls: { bottom: 70, top: 150, metric: 'elbow', cameraView: 'side' },
-  overheadtricepextensions: { bottom: 105, top: 155, metric: 'elbow', cameraView: 'side' },
-  squats: { bottom: 115, top: 160, metric: 'knee', cameraView: 'side' },
-  lunges: { bottom: 100, top: 160, metric: 'knee', cameraView: 'side' },
-};
-
-const HISTORY_SIZE = 12;
+const ASSESSABLE_EXERCISES = new Set([
+  'pushups',
+  'squats',
+  'lateralRaises',
+  'bicepCurls',
+]);
 
 function normalizeExerciseName(name) {
-  return (name || '').toLowerCase().replace(/[^a-z]/g, '');
+  return String(name || '').toLowerCase().replace(/[^a-z]/g, '');
 }
 
-function getVisiblePoint(landmarks, index) {
+function visiblePoint(landmarks, index) {
   const point = landmarks?.[index];
 
   if (
@@ -62,109 +135,48 @@ function getVisiblePoint(landmarks, index) {
 }
 
 function calculateJointAngles(landmarks) {
-  const point = (index) => getVisiblePoint(landmarks, index);
+  const p = (index) => visiblePoint(landmarks, index);
 
   return {
-    leftKnee: calculateAngle(point(23), point(25), point(27)),
-    rightKnee: calculateAngle(point(24), point(26), point(28)),
-
-    leftHip: calculateAngle(point(11), point(23), point(25)),
-    rightHip: calculateAngle(point(12), point(24), point(26)),
-
-    leftElbow: calculateAngle(point(11), point(13), point(15)),
-    rightElbow: calculateAngle(point(12), point(14), point(16)),
-
-    leftArmElevation: calculateAngle(point(23), point(11), point(13)),
-    rightArmElevation: calculateAngle(point(24), point(12), point(14)),
-
-    bodyAlignment: calculateAngle(point(11), point(23), point(27)),
+    leftKnee: calculateAngle(p(23), p(25), p(27)),
+    rightKnee: calculateAngle(p(24), p(26), p(28)),
+    leftHip: calculateAngle(p(11), p(23), p(25)),
+    rightHip: calculateAngle(p(12), p(24), p(26)),
+    leftElbow: calculateAngle(p(11), p(13), p(15)),
+    rightElbow: calculateAngle(p(12), p(14), p(16)),
+    leftArmElevation: calculateAngle(p(23), p(11), p(13)),
+    rightArmElevation: calculateAngle(p(24), p(12), p(14)),
+    bodyAlignment: calculateAngle(p(11), p(23), p(27)),
   };
 }
 
 function getRepetitionAngle(angles, metric) {
-  if (metric === 'elbow') return angles.leftElbow ?? angles.rightElbow;
-  if (metric === 'arm') return angles.leftArmElevation ?? angles.rightArmElevation;
-  if (metric === 'knee') return angles.leftKnee ?? angles.rightKnee;
+  if (metric === 'elbow') {
+    return angles.leftElbow ?? angles.rightElbow;
+  }
+
+  if (metric === 'arm') {
+    return angles.leftArmElevation ?? angles.rightArmElevation;
+  }
+
+  if (metric === 'knee') {
+    return angles.leftKnee ?? angles.rightKnee;
+  }
+
   return null;
-}
-
-function getPhaseLabel(phase) {
-  const labels = {
-    unknown: 'Waiting for movement',
-    contracted: 'Bottom position reached',
-    extended: 'Starting position reached',
-    extending: 'Returning to starting position',
-    flexing: 'Moving into position',
-  };
-
-  return labels[phase] || phase;
-}
-
-function getRecentMovement(history, key) {
-  const values = history
-    .map((frame) => frame[key])
-    .filter((value) => Number.isFinite(value));
-
-  if (values.length < 3) return null;
-
-  const movementDegrees = Math.max(...values) - Math.min(...values);
-
-  return Number(movementDegrees.toFixed(1));
-}
-
-function buildMovementMetrics(history) {
-  const torsoMovement = getRecentMovement(history, 'bodyAlignment');
-  const leftArmMovement = getRecentMovement(history, 'leftArmElevation');
-  const rightArmMovement = getRecentMovement(history, 'rightArmElevation');
-
-  const armMovements = [leftArmMovement, rightArmMovement].filter(
-    Number.isFinite
-  );
-
-  const upperArmMovement =
-    armMovements.length > 0 ? Math.max(...armMovements) : null;
-
-  return {
-    torsoStability: {
-      movementDegrees: torsoMovement,
-    },
-    upperArmStability: {
-      movementDegrees: upperArmMovement,
-    },
-    hipStability: {
-      movementDegrees: torsoMovement,
-    },
-    shoulderStability: {
-      movementDegrees: upperArmMovement,
-    },
-    movementControl: {
-      movementDegrees: getRecentMovement(history, 'primaryAngle'),
-    },
-  };
 }
 
 export default function CameraView({ exercise, onBack }) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const animationRef = useRef(null);
-
-  const movementHistoryRef = useRef([]);
+  const repCounterRef = useRef(null);
+  const runningRef = useRef(false);
+  const previousLandmarksRef = useRef(null);
 
   const exerciseKey = normalizeExerciseName(exercise);
-  const exerciseId = EXERCISE_IDS[exerciseKey] || null;
-  const exerciseConfig = EXERCISE_CONFIG[exerciseKey] || null;
-
-  const repCounterRef = useRef(null);
-  const currentExerciseRef = useRef(null);
-
-  if (exerciseConfig && currentExerciseRef.current !== exerciseKey) {
-    repCounterRef.current = createRepCounter({
-      bottomThreshold: exerciseConfig.bottom,
-      topThreshold: exerciseConfig.top,
-    });
-
-    currentExerciseRef.current = exerciseKey;
-  }
+  const config = EXERCISES[exerciseKey];
+  const canAssess = Boolean(config && ASSESSABLE_EXERCISES.has(config.id));
 
   const [cameraStatus, setCameraStatus] = useState('idle');
   const [poseStatus, setPoseStatus] = useState('loading');
@@ -175,23 +187,37 @@ export default function CameraView({ exercise, onBack }) {
   const [formAssessment, setFormAssessment] = useState(null);
   const [error, setError] = useState('');
 
-  const cameraInstructions = {
-    squats: 'Stand sideways to the camera so your hips, knees and ankles are visible.',
-    pushups: 'Position the camera to your side so your full body is visible.',
-    widegrippushups: 'Face the camera. Keep both arms and shoulders visible.',
-    bentoverrows: 'Position the camera to your side. Keep your back and arms visible.',
-    reversefly: 'Face the camera and keep both arms and shoulders visible.',
-    shoulderpress: 'Face the camera with your full upper body visible.',
-    lateralraises: 'Face the camera and keep both arms visible.',
-    bicepcurls: 'Use a side view and keep your shoulder, elbow and wrist visible.',
-    overheadtricepextensions: 'Use a side view and keep your upper arm and elbow visible.',
-    lunges: 'Use a front or side view. Keep your hips, knees and ankles visible.',
-  };
+  // Create a counter for the initially selected exercise.
+  if (config && !repCounterRef.current) {
+    repCounterRef.current = createRepCounter({
+      bottomThreshold: config.bottom,
+      topThreshold: config.top,
+    });
+  }
 
-  function resetRepCounter() {
-    if (repCounterRef.current) repCounterRef.current.reset();
+  // Reset the counter and smoothing history whenever the exercise changes.
+  useEffect(() => {
+    if (!config) {
+      repCounterRef.current = null;
+      return;
+    }
 
-    movementHistoryRef.current = [];
+    repCounterRef.current = createRepCounter({
+      bottomThreshold: config.bottom,
+      topThreshold: config.top,
+    });
+
+    previousLandmarksRef.current = null;
+    setRepetitions(0);
+    setMovementPhase('unknown');
+    setFormAssessment(null);
+    setPoseData(null);
+    setJointAngles({});
+  }, [exerciseKey]);
+
+  function resetRepetitions() {
+    repCounterRef.current?.reset();
+    previousLandmarksRef.current = null;
 
     setRepetitions(0);
     setMovementPhase('unknown');
@@ -199,6 +225,8 @@ export default function CameraView({ exercise, onBack }) {
   }
 
   function stopCamera() {
+    runningRef.current = false;
+
     if (animationRef.current) {
       cancelAnimationFrame(animationRef.current);
       animationRef.current = null;
@@ -209,24 +237,26 @@ export default function CameraView({ exercise, onBack }) {
       streamRef.current = null;
     }
 
-    if (videoRef.current) videoRef.current.srcObject = null;
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
 
+    previousLandmarksRef.current = null;
     closePoseDetection();
-    resetRepCounter();
+    resetRepetitions();
 
     setCameraStatus('idle');
     setPoseStatus('loading');
     setPoseData(null);
     setJointAngles({});
-    setError('');
   }
 
   function runPoseDetection() {
-    if (!streamRef.current) return;
+    if (!runningRef.current) return;
 
     const video = videoRef.current;
 
-    if (!video || video.readyState < 2 || video.videoWidth === 0) {
+    if (!video || video.readyState < 2 || !video.videoWidth) {
       animationRef.current = requestAnimationFrame(runPoseDetection);
       return;
     }
@@ -235,50 +265,55 @@ export default function CameraView({ exercise, onBack }) {
       const result = detectPose(video);
 
       if (result?.landmarks?.length) {
-        const landmarks = result.landmarks;
-        const angles = calculateJointAngles(landmarks);
+        const rawLandmarks = result.landmarks;
 
-        setPoseData(result);
+        // Smooth landmark positions to reduce frame-to-frame jitter.
+        const smoothedLandmarks = smoothLandmarks(
+          previousLandmarksRef.current,
+          rawLandmarks,
+          0.35,
+          0.3
+        );
+
+        previousLandmarksRef.current = smoothedLandmarks;
+
+        // Use the smoothed points consistently for angles and assessment.
+        const smoothedPose = {
+          ...result,
+          landmarks: smoothedLandmarks,
+        };
+
+        const angles = calculateJointAngles(smoothedLandmarks);
+
+        setPoseData(smoothedPose);
         setJointAngles(angles);
         setPoseStatus('detected');
 
-        if (exerciseConfig && exerciseId && repCounterRef.current) {
-          const repetitionAngle = getRepetitionAngle(
-            angles,
-            exerciseConfig.metric
-          );
+        if (config) {
+          const angle = getRepetitionAngle(angles, config.metric);
+          const repResult = repCounterRef.current?.update(angle);
 
-          const history = movementHistoryRef.current;
+          if (repResult) {
+            setRepetitions(repResult.repetitions);
+            setMovementPhase(repResult.phase);
+          }
 
-          history.push({
-            bodyAlignment: angles.bodyAlignment,
-            leftArmElevation: angles.leftArmElevation,
-            rightArmElevation: angles.rightArmElevation,
-            primaryAngle: repetitionAngle,
-          });
+          if (canAssess) {
+            const assessment = evaluateExerciseForm({
+              exerciseId: config.id,
+              angles,
+              landmarks: smoothedLandmarks,
+              cameraView: config.cameraView,
+            });
 
-          if (history.length > HISTORY_SIZE) history.shift();
-
-          const movementMetrics = buildMovementMetrics(history);
-
-          const repResult = repCounterRef.current.update(repetitionAngle);
-
-          setRepetitions(repResult.repetitions);
-          setMovementPhase(repResult.phase);
-
-          const assessment = evaluateExerciseForm({
-            exerciseId,
-            angles,
-            landmarks,
-            cameraView: exerciseConfig.cameraView,
-            phase: repResult.phase,
-            movementMetrics,
-          });
-
-          setFormAssessment(assessment);
+            setFormAssessment(assessment);
+          } else {
+            setFormAssessment(null);
+          }
         }
       } else {
-        movementHistoryRef.current = [];
+        previousLandmarksRef.current = null;
+
         setPoseData(null);
         setJointAngles({});
         setFormAssessment(null);
@@ -286,7 +321,12 @@ export default function CameraView({ exercise, onBack }) {
       }
     } catch (err) {
       console.error('Pose detection error:', err);
+
       setPoseStatus('error');
+      setError('Body tracking stopped unexpectedly. Stop and restart the camera.');
+
+      runningRef.current = false;
+      return;
     }
 
     animationRef.current = requestAnimationFrame(runPoseDetection);
@@ -297,7 +337,9 @@ export default function CameraView({ exercise, onBack }) {
       setError('');
       setPoseData(null);
       setJointAngles({});
-      resetRepCounter();
+      previousLandmarksRef.current = null;
+      resetRepetitions();
+
       setPoseStatus('loading');
       setCameraStatus('loading');
 
@@ -309,6 +351,7 @@ export default function CameraView({ exercise, onBack }) {
         video: {
           width: { ideal: 1280 },
           height: { ideal: 720 },
+          facingMode: 'user',
         },
         audio: false,
       });
@@ -317,21 +360,23 @@ export default function CameraView({ exercise, onBack }) {
       setCameraStatus('active');
     } catch (err) {
       console.error('Camera error:', err);
+
       setCameraStatus('idle');
 
       setError(
-        err.message ||
-          'Unable to access your camera. Please check camera permissions.'
+        err.name === 'NotAllowedError'
+          ? 'Camera permission was denied. Allow camera access in your browser settings.'
+          : err.message || 'Unable to access the camera.'
       );
     }
   }
 
   useEffect(() => {
-    if (cameraStatus !== 'active') return;
+    if (cameraStatus !== 'active') return undefined;
 
     let cancelled = false;
 
-    async function setupCameraAndPose() {
+    async function initialize() {
       try {
         const video = videoRef.current;
 
@@ -339,28 +384,30 @@ export default function CameraView({ exercise, onBack }) {
 
         video.srcObject = streamRef.current;
         await video.play();
-
         await initializePoseDetection();
 
-        if (cancelled || !streamRef.current) return;
+        if (cancelled || !streamRef.current) {
+          closePoseDetection();
+          return;
+        }
 
+        runningRef.current = true;
         runPoseDetection();
       } catch (err) {
-        console.error('Pose detection initialization error:', err);
+        console.error('Pose initialization error:', err);
 
         if (!cancelled) {
           setPoseStatus('error');
-          setError(
-            'Camera is working, but body tracking could not start. Check the console for details.'
-          );
+          setError('Could not initialize body tracking. Please stop and try again.');
         }
       }
     }
 
-    setupCameraAndPose();
+    initialize();
 
     return () => {
       cancelled = true;
+      runningRef.current = false;
 
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
@@ -371,27 +418,44 @@ export default function CameraView({ exercise, onBack }) {
 
   useEffect(() => {
     return () => {
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
+      runningRef.current = false;
+
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
 
       if (streamRef.current) {
         streamRef.current.getTracks().forEach((track) => track.stop());
-        streamRef.current = null;
       }
 
       closePoseDetection();
     };
   }, []);
 
+  const phaseLabel = {
+    unknown: 'Waiting for movement',
+    contracted: 'Bottom position',
+    extended: 'Starting position',
+    extending: 'Returning upward',
+    flexing: 'Moving downward',
+  };
+
   return (
     <div className="camera-page">
-      <button className="back-button" onClick={onBack}>
-        Back to exercises
+      <button
+        className="back-button"
+        onClick={() => {
+          stopCamera();
+          onBack?.();
+        }}
+      >
+        ← Back to exercises
       </button>
 
       <h1>Live Form Assessment</h1>
 
       <p className="camera-subtitle">
-        Selected exercise: <strong>{exercise}</strong>
+        Selected exercise: <strong>{config?.name || exercise}</strong>
       </p>
 
       <div className="camera-box">
@@ -413,29 +477,39 @@ export default function CameraView({ exercise, onBack }) {
                 display: 'block',
                 width: '100%',
                 height: 'auto',
-                objectFit: 'cover',
+                transform: 'scaleX(-1)',
               }}
             />
 
-            <SkeletonOverlay landmarks={poseData?.landmarks} />
+            <div
+              style={{
+                position: 'absolute',
+                inset: 0,
+                transform: 'scaleX(-1)',
+              }}
+            >
+              <SkeletonOverlay
+                landmarks={poseData?.landmarks}
+                assessment={formAssessment}
+              />
+            </div>
 
             <div
               style={{
                 position: 'absolute',
                 top: 12,
                 left: 12,
-                zIndex: 20,
-                padding: '10px 14px',
-                background: '#111827',
-                color: '#38D9A9',
-                border: '2px solid #38D9A9',
+                zIndex: 10,
+                padding: '8px 12px',
+                background: 'rgba(17, 24, 39, 0.85)',
+                color: '#fff',
                 borderRadius: 8,
-                fontSize: 15,
-                fontWeight: 'bold',
+                fontSize: 13,
                 lineHeight: 1.5,
               }}
             >
-              Landmarks: {poseData?.landmarks?.length ?? 0}
+              <div>● AR body tracking</div>
+              <div>Landmarks: {poseData?.landmarks?.length ?? 0}</div>
             </div>
           </div>
         ) : (
@@ -466,7 +540,7 @@ export default function CameraView({ exercise, onBack }) {
           Body tracking:{' '}
           <strong>
             {poseStatus === 'detected'
-              ? 'Body detected successfully!'
+              ? 'Body detected'
               : poseStatus === 'not-detected'
                 ? 'No body detected. Move into view.'
                 : poseStatus === 'error'
@@ -479,14 +553,15 @@ export default function CameraView({ exercise, onBack }) {
 
         {poseData && (
           <p>
-            Visibility estimate: {Math.round((poseData.confidence ?? 0) * 100)}%
+            Pose visibility estimate:{' '}
+            {Math.round((poseData.confidence ?? 0) * 100)}%
           </p>
         )}
       </div>
 
       <JointAngleDisplay angles={jointAngles} />
 
-      {exerciseConfig && (
+      {config && (
         <section className="joint-angle-panel">
           <h2>Repetition Counter</h2>
 
@@ -498,13 +573,13 @@ export default function CameraView({ exercise, onBack }) {
 
             <div className="joint-angle-card">
               <span>Movement Phase</span>
-              <strong>{getPhaseLabel(movementPhase)}</strong>
+              <strong>{phaseLabel[movementPhase] || movementPhase}</strong>
             </div>
           </div>
 
           <button
             className="stop-camera-button"
-            onClick={resetRepCounter}
+            onClick={resetRepetitions}
             style={{ marginTop: 16 }}
           >
             Reset Repetitions
@@ -515,29 +590,27 @@ export default function CameraView({ exercise, onBack }) {
       <section className="joint-angle-panel">
         <h2>Form Assessment</h2>
 
-        {!formAssessment ? (
+        {!canAssess ? (
           <p>
-            {cameraStatus !== 'active'
-              ? 'Start the camera to assess your exercise form.'
-              : poseStatus === 'not-detected'
-                ? 'Move into the camera view so your body can be assessed.'
-                : 'Waiting for movement measurements...'}
+            Live pose tracking and repetition counting are available for this
+            exercise. Detailed form scoring is not enabled for it yet.
           </p>
-        ) : !formAssessment.success ? (
-          <p>Assessment could not be completed: {formAssessment.error}</p>
+        ) : !formAssessment ? (
+          <p>
+            {poseStatus === 'not-detected'
+              ? 'Move into the camera view so your body can be assessed.'
+              : 'Waiting for visible joint measurements...'}
+          </p>
         ) : formAssessment.formScore === null ? (
-          <div>
-            <h3>Unable to assess</h3>
-            <p>
-              More visible movement measurements are needed to calculate your
-              form score.
-            </p>
-          </div>
+          <p>
+            {formAssessment.feedback?.[0] ||
+              'More visible joint measurements are needed.'}
+          </p>
         ) : (
           <>
             <div className="joint-angle-grid">
               <div className="joint-angle-card">
-                <span>Form Score</span>
+                <span>Live Form Estimate</span>
                 <strong>{Math.round(formAssessment.formScore)}/100</strong>
               </div>
 
@@ -550,53 +623,70 @@ export default function CameraView({ exercise, onBack }) {
                 <span>Checks Assessed</span>
                 <strong>{formAssessment.assessedFeatures}</strong>
               </div>
-
-              <div className="joint-angle-card">
-                <span>Checks Unavailable</span>
-                <strong>{formAssessment.unavailableFeatures}</strong>
-              </div>
             </div>
 
             <h3>Form Feedback</h3>
 
-            {formAssessment.feedback?.length > 0 ? (
+            {formAssessment.feedback.length ? (
               <ul>
-                {formAssessment.feedback.map((message, index) => (
-                  <li key={`${message}-${index}`}>{message}</li>
+                {formAssessment.feedback.map((message) => (
+                  <li key={message}>{message}</li>
                 ))}
               </ul>
             ) : (
-              <p>No deviations detected in the features assessed so far.</p>
+              <p>No deviation detected in the measured checks.</p>
             )}
 
             <h3>Assessment Details</h3>
 
             <ul>
-              {Object.entries(formAssessment.features || {}).map(
-                ([featureName, feature]) => (
-                  <li key={featureName}>
-                    <strong>
-                      {featureName.replace(/([A-Z])/g, ' $1')}:
-                    </strong>{' '}
-                    {feature.status === 'unavailable'
-                      ? 'Unable to assess'
-                      : feature.status === 'warning'
-                        ? 'Needs attention'
-                        : 'Within target range'}
-                  </li>
-                )
-              )}
+              {Object.entries(formAssessment.features).map(([name, feature]) => (
+                <li key={name}>
+                  <strong>{name.replace(/([A-Z])/g, ' $1')}:</strong>{' '}
+                  {feature.status === 'unavailable'
+                    ? 'Not assessed'
+                    : feature.status === 'warning'
+                      ? 'Needs attention'
+                      : 'Within target range'}
+                </li>
+              ))}
             </ul>
           </>
         )}
       </section>
 
-      <div className="camera-instructions">
+      <section className="camera-instructions">
         <h3>Camera positioning</h3>
+
         <p>
-          {cameraInstructions[exerciseKey] ||
+          {config?.instruction ||
             'Keep your full body visible and make sure the lighting is good.'}
         </p>
+
+        {config && (
+          <p>
+            Required view: <strong>{config.cameraView}</strong>
+          </p>
+        )}
+      </section>
+
+      <div
+        style={{
+          display: 'flex',
+          gap: 16,
+          flexWrap: 'wrap',
+          margin: '12px 0',
+        }}
+      >
+        <span>
+          <strong style={{ color: '#22c55e' }}>●</strong> Within target
+        </span>
+        <span>
+          <strong style={{ color: '#ef4444' }}>●</strong> Needs attention
+        </span>
+        <span>
+          <strong style={{ color: '#9ca3af' }}>●</strong> Not assessed
+        </span>
       </div>
 
       {error && <p className="camera-error">{error}</p>}
