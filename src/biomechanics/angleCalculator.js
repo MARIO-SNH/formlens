@@ -1,19 +1,5 @@
-// FormLens - Joint Angle Calculator
-
-/**
- * Calculates the angle formed by three points.
- * B is the joint whose angle we want to measure.
- *
- * @param {{x:number, y:number, z?:number}} A
- * @param {{x:number, y:number, z?:number}} B
- * @param {{x:number, y:number, z?:number}} C
- * @returns {number|null} Angle in degrees
- */
-
 export function calculateAngle(A, B, C) {
-    if (!A || !B || !C) {
-        return null;
-    }
+    if (!A || !B || !C) return null;
 
     const vectorBA = {
         x: A.x - B.x,
@@ -48,14 +34,12 @@ export function calculateAngle(A, B, C) {
         return null;
     }
 
-    let cosineAngle = dotProduct / (magnitudeBA * magnitudeBC);
+    let cosineAngle =
+        dotProduct / (magnitudeBA * magnitudeBC);
 
-    // Prevent floating-point errors.
     cosineAngle = Math.max(-1, Math.min(1, cosineAngle));
 
     const angleRadians = Math.acos(cosineAngle);
 
-    const angleDegrees = angleRadians * (180 / Math.PI);
-
-    return Math.round(angleDegrees);
+    return Math.round(angleRadians * (180 / Math.PI));
 }
