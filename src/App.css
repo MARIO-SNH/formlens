@@ -531,6 +531,97 @@ footer {
   cursor: wait;
 }
 
+/* Joint angle and assessment panels */
+
+.joint-angle-panel {
+  margin-top: 20px;
+  padding: 24px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 15px;
+}
+
+.joint-angle-panel h2 {
+  margin-bottom: 8px;
+  font-size: 20px;
+}
+
+.joint-angle-panel h3 {
+  margin: 22px 0 12px;
+  font-size: 16px;
+}
+
+.joint-angle-subtitle {
+  margin-bottom: 18px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.joint-angle-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.joint-angle-card {
+  min-width: 0;
+  padding: 16px;
+  background: #172334;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.joint-angle-card span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.joint-angle-card strong {
+  color: var(--accent);
+  font-size: 22px;
+  overflow-wrap: anywhere;
+}
+
+.joint-angle-panel > p {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.joint-angle-panel ul {
+  padding-left: 22px;
+  color: var(--muted);
+}
+
+.joint-angle-panel li {
+  margin-bottom: 9px;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.joint-angle-panel li strong {
+  color: var(--text);
+}
+
+/* Assessment feedback states */
+
+.assessment-good {
+  color: var(--accent);
+}
+
+.assessment-warning {
+  color: var(--warning);
+}
+
+.assessment-unavailable {
+  color: var(--muted);
+}
+
 /* Responsive layout */
 
 @media (max-width: 750px) {
@@ -574,5 +665,26 @@ footer {
 
   .muscle-tab {
     padding: 10px 14px;
+  }
+
+  .camera-box,
+  .camera-placeholder {
+    min-height: 240px;
+  }
+
+  .joint-angle-panel {
+    padding: 17px;
+  }
+
+  .joint-angle-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .joint-angle-card {
+    padding: 12px;
+  }
+
+  .joint-angle-card strong {
+    font-size: 19px;
   }
 }

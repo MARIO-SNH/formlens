@@ -1,59 +1,78 @@
+
 export function createRepCounter({
-    bottomThreshold,
-    topThreshold
+  bottomThreshold,
+  topThreshold,
+  confirmationFrames = 2,
+  minimumRepFrames = 4,
 }) {
-    let repetitions = 0;
-    let phase = "unknown";
-    let hasReachedBottom = false;
+  if (
+    !Number.isFinite(bottomThreshold) ||
+    !Number.isFinite(topThreshold) ||
+    bottomThreshold >= topThreshold
+  ) {
+    throw new Error('Invalid repetition thresholds.');
+  }
 
-    function update(angle) {
-        if (
-            typeof angle !== "number" ||
-            !Number.isFinite(angle) ||
-            angle < 0 ||
-            angle > 180
-        ) {
-            return {
-                repetitions,
-                phase,
-                counted: false
-            };
-        }
+  let repetitions = 0;
+  let phase = 'unknown';
+  let hasReachedBottom = false;
+  let bottomFrames = 0;
+  let topFrames = 0;
+  let repFrames = 0;
 
-        let counted = false;
-
-        if (angle <= bottomThreshold) {
-            phase = "contracted";
-            hasReachedBottom = true;
-        } else if (angle >= topThreshold) {
-            phase = "extended";
-
-            if (hasReachedBottom) {
-                repetitions++;
-                counted = true;
-                hasReachedBottom = false;
-            }
-        } else if (hasReachedBottom) {
-            phase = "extending";
-        } else {
-            phase = "flexing";
-        }
-
-        return {
-            repetitions,
-            phase,
-            counted
-        };
+  function update(angle) {
+    if (
+      !Number.isFinite(angle) ||
+      angle < 0 ||
+      angle > 180
+    ) {
+      return { repetitions, phase, counted: false, valid: false };
     }
 
-    function reset() {
-        repetitions = 0;
-        phase = "unknown";
+    let counted = false;
+    repFrames += 1;
+
+    if (angle <= bottomThreshold) {
+      bottomFrames += 1;
+      topFrames = 0;
+      phase = 'contracted';
+
+      if (bottomFrames >= confirmationFrames) {
+        hasReachedBottom = true;
+      }
+    } else if (angle >= topThreshold) {
+      topFrames += 1;
+      bottomFrames = 0;
+      phase = 'extended';
+
+      if (
+        hasReachedBottom &&
+        topFrames >= confirmationFrames &&
+        repFrames >= minimumRepFrames
+      ) {
+        repetitions += 1;
+        counted = true;
         hasReachedBottom = false;
+        repFrames = 0;
+      }
+    } else {
+      bottomFrames = 0;
+      topFrames = 0;
+
+      phase = hasReachedBottom ? 'extending' : 'flexing';
     }
 
-    return {
-        update,
-        reset
-    };
+    return { repetitions, phase, counted, valid: true };
+  }
+
+  function reset() {
+    repetitions = 0;
+    phase = 'unknown';
+    hasReachedBottom = false;
+    bottomFrames = 0;
+    topFrames = 0;
+    repFrames = 0;
+  }
+
+  return { update, reset };
 }
