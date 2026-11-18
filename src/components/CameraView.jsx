@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from 'react';
 
 import {
@@ -11,9 +10,9 @@ import { calculateAngle } from '../biomechanics/angleCalculator';
 import { createRepCounter } from '../biomechanics/movementAnalyzer';
 import { evaluateExerciseForm } from '../biomechanics/exerciseRules';
 import { smoothLandmarks } from '../biomechanics/landmarkSmoothing';
+import { generateWorkoutReport } from '../biomechanics/reportGenerator';
 
 import SkeletonOverlay from './SkeletonOverlay';
-import JointAngleDisplay from './JointAngleDisplay';
 
 const EXERCISES = {
   pushups: {
@@ -23,10 +22,10 @@ const EXERCISES = {
     top: 160,
     metric: 'elbow',
     cameraView: 'side',
-    instruction: 'Stand side-on to the camera. Keep your shoulders, hips and ankles visible.',
+    instruction: 'Stand side-on. Keep your shoulders, hips, elbows and ankles visible.',
   },
   widegrippushups: {
-    id: 'widePushups',
+    id: 'widePushUps',
     name: 'Wide-grip Push-ups',
     bottom: 100,
     top: 160,
@@ -135,18 +134,18 @@ function visiblePoint(landmarks, index) {
 }
 
 function calculateJointAngles(landmarks) {
-  const p = (index) => visiblePoint(landmarks, index);
+  const point = (index) => visiblePoint(landmarks, index);
 
   return {
-    leftKnee: calculateAngle(p(23), p(25), p(27)),
-    rightKnee: calculateAngle(p(24), p(26), p(28)),
-    leftHip: calculateAngle(p(11), p(23), p(25)),
-    rightHip: calculateAngle(p(12), p(24), p(26)),
-    leftElbow: calculateAngle(p(11), p(13), p(15)),
-    rightElbow: calculateAngle(p(12), p(14), p(16)),
-    leftArmElevation: calculateAngle(p(23), p(11), p(13)),
-    rightArmElevation: calculateAngle(p(24), p(12), p(14)),
-    bodyAlignment: calculateAngle(p(11), p(23), p(27)),
+    leftKnee: calculateAngle(point(23), point(25), point(27)),
+    rightKnee: calculateAngle(point(24), point(26), point(28)),
+    leftHip: calculateAngle(point(11), point(23), point(25)),
+    rightHip: calculateAngle(point(12), point(24), point(26)),
+    leftElbow: calculateAngle(point(11), point(13), point(15)),
+    rightElbow: calculateAngle(point(12), point(14), point(16)),
+    leftArmElevation: calculateAngle(point(23), point(11), point(13)),
+    rightArmElevation: calculateAngle(point(24), point(12), point(14)),
+    bodyAlignment: calculateAngle(point(11), point(23), point(27)),
   };
 }
 
@@ -166,28 +165,35 @@ function getRepetitionAngle(angles, metric) {
   return null;
 }
 
-export default function CameraView({ exercise, onBack }) {
+export default function CameraView({
+  exercise,
+  targetReps = 12,
+  onBack,
+  onComplete,
+}) {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const animationRef = useRef(null);
   const repCounterRef = useRef(null);
   const runningRef = useRef(false);
   const previousLandmarksRef = useRef(null);
+  const sampleBufferRef = useRef([]);
+  const completedRepSamplesRef = useRef([]);
+  const finishingRef = useRef(false);
 
   const exerciseKey = normalizeExerciseName(exercise);
   const config = EXERCISES[exerciseKey];
-  const canAssess = Boolean(config && ASSESSABLE_EXERCISES.has(config.id));
+  const canAssess = Boolean(
+    config && ASSESSABLE_EXERCISES.has(config.id)
+  );
 
   const [cameraStatus, setCameraStatus] = useState('idle');
-  const [poseStatus, setPoseStatus] = useState('loading');
+  const [isPaused, setIsPaused] = useState(false);
   const [poseData, setPoseData] = useState(null);
-  const [jointAngles, setJointAngles] = useState({});
+  const [assessment, setAssessment] = useState(null);
   const [repetitions, setRepetitions] = useState(0);
-  const [movementPhase, setMovementPhase] = useState('unknown');
-  const [formAssessment, setFormAssessment] = useState(null);
   const [error, setError] = useState('');
 
-  // Create a counter for the initially selected exercise.
   if (config && !repCounterRef.current) {
     repCounterRef.current = createRepCounter({
       bottomThreshold: config.bottom,
@@ -195,34 +201,24 @@ export default function CameraView({ exercise, onBack }) {
     });
   }
 
-  // Reset the counter and smoothing history whenever the exercise changes.
   useEffect(() => {
-    if (!config) {
-      repCounterRef.current = null;
-      return;
-    }
-
-    repCounterRef.current = createRepCounter({
-      bottomThreshold: config.bottom,
-      topThreshold: config.top,
-    });
+    repCounterRef.current = config
+      ? createRepCounter({
+          bottomThreshold: config.bottom,
+          topThreshold: config.top,
+        })
+      : null;
 
     previousLandmarksRef.current = null;
+    sampleBufferRef.current = [];
+    completedRepSamplesRef.current = [];
+    finishingRef.current = false;
+
     setRepetitions(0);
-    setMovementPhase('unknown');
-    setFormAssessment(null);
+    setAssessment(null);
     setPoseData(null);
-    setJointAngles({});
-  }, [exerciseKey]);
-
-  function resetRepetitions() {
-    repCounterRef.current?.reset();
-    previousLandmarksRef.current = null;
-
-    setRepetitions(0);
-    setMovementPhase('unknown');
-    setFormAssessment(null);
-  }
+    setIsPaused(false);
+  }, [exerciseKey, targetReps]);
 
   function stopCamera() {
     runningRef.current = false;
@@ -243,16 +239,36 @@ export default function CameraView({ exercise, onBack }) {
 
     previousLandmarksRef.current = null;
     closePoseDetection();
-    resetRepetitions();
 
     setCameraStatus('idle');
-    setPoseStatus('loading');
+    setIsPaused(false);
     setPoseData(null);
-    setJointAngles({});
+  }
+
+  function finishSet() {
+    if (finishingRef.current) return;
+
+    finishingRef.current = true;
+    runningRef.current = false;
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    const report = generateWorkoutReport({
+      exerciseName: config?.name || exercise,
+      completedReps: completedRepSamplesRef.current.length,
+      targetReps,
+      repSamples: completedRepSamplesRef.current,
+    });
+
+    stopCamera();
+    onComplete?.(report);
   }
 
   function runPoseDetection() {
-    if (!runningRef.current) return;
+    if (!runningRef.current || finishingRef.current) return;
 
     const video = videoRef.current;
 
@@ -265,19 +281,15 @@ export default function CameraView({ exercise, onBack }) {
       const result = detectPose(video);
 
       if (result?.landmarks?.length) {
-        const rawLandmarks = result.landmarks;
-
-        // Smooth landmark positions to reduce frame-to-frame jitter.
         const smoothedLandmarks = smoothLandmarks(
           previousLandmarksRef.current,
-          rawLandmarks,
+          result.landmarks,
           0.35,
           0.3
         );
 
         previousLandmarksRef.current = smoothedLandmarks;
 
-        // Use the smoothed points consistently for angles and assessment.
         const smoothedPose = {
           ...result,
           landmarks: smoothedLandmarks,
@@ -286,61 +298,88 @@ export default function CameraView({ exercise, onBack }) {
         const angles = calculateJointAngles(smoothedLandmarks);
 
         setPoseData(smoothedPose);
-        setJointAngles(angles);
-        setPoseStatus('detected');
 
         if (config) {
           const angle = getRepetitionAngle(angles, config.metric);
           const repResult = repCounterRef.current?.update(angle);
 
-          if (repResult) {
-            setRepetitions(repResult.repetitions);
-            setMovementPhase(repResult.phase);
-          }
+          let currentAssessment = null;
 
           if (canAssess) {
-            const assessment = evaluateExerciseForm({
+            currentAssessment = evaluateExerciseForm({
               exerciseId: config.id,
               angles,
               landmarks: smoothedLandmarks,
               cameraView: config.cameraView,
             });
 
-            setFormAssessment(assessment);
+            setAssessment(currentAssessment);
           } else {
-            setFormAssessment(null);
+            setAssessment(null);
+          }
+
+          if (currentAssessment?.success) {
+            sampleBufferRef.current.push({
+              features: currentAssessment.features,
+            });
+
+            // Prevent an unusually long set from growing without limit.
+            if (sampleBufferRef.current.length > 600) {
+              sampleBufferRef.current.shift();
+            }
+          }
+
+          if (repResult?.counted) {
+            completedRepSamplesRef.current.push(
+              [...sampleBufferRef.current]
+            );
+
+            sampleBufferRef.current = [];
+
+            setRepetitions(repResult.repetitions);
+
+            if (repResult.repetitions >= targetReps) {
+              // Allow the state update to commit before creating the report.
+              window.setTimeout(() => {
+                finishSet();
+              }, 0);
+
+              return;
+            }
+          } else if (repResult) {
+            setRepetitions(repResult.repetitions);
           }
         }
       } else {
         previousLandmarksRef.current = null;
-
         setPoseData(null);
-        setJointAngles({});
-        setFormAssessment(null);
-        setPoseStatus('not-detected');
+        setAssessment(null);
       }
     } catch (err) {
       console.error('Pose detection error:', err);
-
-      setPoseStatus('error');
-      setError('Body tracking stopped unexpectedly. Stop and restart the camera.');
-
       runningRef.current = false;
+      setError('Body tracking stopped. Please stop and restart the camera.');
       return;
     }
 
-    animationRef.current = requestAnimationFrame(runPoseDetection);
+    if (runningRef.current) {
+      animationRef.current = requestAnimationFrame(runPoseDetection);
+    }
   }
 
   async function startCamera() {
     try {
       setError('');
       setPoseData(null);
-      setJointAngles({});
-      previousLandmarksRef.current = null;
-      resetRepetitions();
+      setAssessment(null);
+      setRepetitions(0);
 
-      setPoseStatus('loading');
+      repCounterRef.current?.reset();
+      sampleBufferRef.current = [];
+      completedRepSamplesRef.current = [];
+      previousLandmarksRef.current = null;
+      finishingRef.current = false;
+
       setCameraStatus('loading');
 
       if (!navigator.mediaDevices?.getUserMedia) {
@@ -360,7 +399,6 @@ export default function CameraView({ exercise, onBack }) {
       setCameraStatus('active');
     } catch (err) {
       console.error('Camera error:', err);
-
       setCameraStatus('idle');
 
       setError(
@@ -369,6 +407,25 @@ export default function CameraView({ exercise, onBack }) {
           : err.message || 'Unable to access the camera.'
       );
     }
+  }
+
+  function pauseWorkout() {
+    runningRef.current = false;
+
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+
+    setIsPaused(true);
+  }
+
+  function resumeWorkout() {
+    if (!streamRef.current || finishingRef.current) return;
+
+    runningRef.current = true;
+    setIsPaused(false);
+    runPoseDetection();
   }
 
   useEffect(() => {
@@ -387,7 +444,6 @@ export default function CameraView({ exercise, onBack }) {
         await initializePoseDetection();
 
         if (cancelled || !streamRef.current) {
-          closePoseDetection();
           return;
         }
 
@@ -397,8 +453,10 @@ export default function CameraView({ exercise, onBack }) {
         console.error('Pose initialization error:', err);
 
         if (!cancelled) {
-          setPoseStatus('error');
-          setError('Could not initialize body tracking. Please stop and try again.');
+          runningRef.current = false;
+          setError(
+            'Could not initialize body tracking. Please stop and try again.'
+          );
         }
       }
     }
@@ -432,276 +490,146 @@ export default function CameraView({ exercise, onBack }) {
     };
   }, []);
 
-  const phaseLabel = {
-    unknown: 'Waiting for movement',
-    contracted: 'Bottom position',
-    extended: 'Starting position',
-    extending: 'Returning upward',
-    flexing: 'Moving downward',
-  };
+  if (!config) {
+    return (
+      <main className="camera-page">
+        <p>That exercise could not be found.</p>
+        <button className="back-button" onClick={onBack}>
+          Back
+        </button>
+      </main>
+    );
+  }
 
   return (
-    <div className="camera-page">
-      <button
-        className="back-button"
-        onClick={() => {
-          stopCamera();
-          onBack?.();
-        }}
-      >
-        ← Back to exercises
-      </button>
+    <main className="camera-page workout-camera-page">
+      <header className="workout-topbar">
+        <button
+          className="back-button"
+          onClick={() => {
+            stopCamera();
+            onBack?.();
+          }}
+        >
+          ← Back
+        </button>
 
-      <h1>Live Form Assessment</h1>
+        <div className="workout-exercise-name">
+          <span>{config.name}</span>
+          <small>FormLens AR workout</small>
+        </div>
+      </header>
 
-      <p className="camera-subtitle">
-        Selected exercise: <strong>{config?.name || exercise}</strong>
-      </p>
+      <section className="rep-counter-card">
+        <div>
+          <span className="rep-counter-label">REPETITIONS</span>
+          <div className="rep-counter-value">
+            {repetitions}
+            <span> / {targetReps}</span>
+          </div>
+        </div>
 
-      <div className="camera-box">
-        {cameraStatus === 'active' ? (
+        <div className="rep-progress-track">
           <div
+            className="rep-progress-fill"
             style={{
-              position: 'relative',
-              width: '100%',
-              lineHeight: 0,
-              overflow: 'hidden',
+              width: `${Math.min(100, (repetitions / targetReps) * 100)}%`,
             }}
-          >
+          />
+        </div>
+      </section>
+
+      <section className="workout-camera-frame">
+        {cameraStatus === 'active' ? (
+          <>
             <video
               ref={videoRef}
               autoPlay
               playsInline
               muted
-              style={{
-                display: 'block',
-                width: '100%',
-                height: 'auto',
-                transform: 'scaleX(-1)',
-              }}
+              className="workout-video"
             />
 
-            <div
-              style={{
-                position: 'absolute',
-                inset: 0,
-                transform: 'scaleX(-1)',
-              }}
-            >
+            <div className="workout-overlay">
               <SkeletonOverlay
                 landmarks={poseData?.landmarks}
-                assessment={formAssessment}
+                assessment={assessment}
               />
             </div>
 
-            <div
-              style={{
-                position: 'absolute',
-                top: 12,
-                left: 12,
-                zIndex: 10,
-                padding: '8px 12px',
-                background: 'rgba(17, 24, 39, 0.85)',
-                color: '#fff',
-                borderRadius: 8,
-                fontSize: 13,
-                lineHeight: 1.5,
-              }}
-            >
-              <div>● AR body tracking</div>
-              <div>Landmarks: {poseData?.landmarks?.length ?? 0}</div>
+            <div className="tracking-indicator">
+              <span className={poseData ? 'tracking-dot active' : 'tracking-dot'} />
+              {poseData ? 'Body detected' : 'Move into camera view'}
             </div>
-          </div>
+
+            {isPaused && (
+              <div className="paused-overlay">
+                <strong>Workout paused</strong>
+                <span>Resume when you're ready.</span>
+              </div>
+            )}
+          </>
         ) : (
-          <div className="camera-placeholder">
-            <span className="camera-icon">◉</span>
+          <div className="workout-camera-placeholder">
+            <div className="camera-placeholder-icon">◎</div>
+
+            <h2>
+              {cameraStatus === 'loading'
+                ? 'Starting camera…'
+                : 'Ready when you are'}
+            </h2>
+
             <p>
               {cameraStatus === 'loading'
-                ? 'Starting camera...'
-                : 'Your camera preview will appear here'}
+                ? 'Please allow camera and body tracking to initialize.'
+                : config.instruction}
             </p>
           </div>
         )}
-      </div>
-
-      <div className="camera-status">
-        <p>
-          Camera:{' '}
-          <strong>
-            {cameraStatus === 'active'
-              ? 'Active'
-              : cameraStatus === 'loading'
-                ? 'Starting...'
-                : 'Off'}
-          </strong>
-        </p>
-
-        <p>
-          Body tracking:{' '}
-          <strong>
-            {poseStatus === 'detected'
-              ? 'Body detected'
-              : poseStatus === 'not-detected'
-                ? 'No body detected. Move into view.'
-                : poseStatus === 'error'
-                  ? 'Tracking error'
-                  : 'Searching for body...'}
-          </strong>
-        </p>
-
-        <p>Landmarks received: {poseData?.landmarks?.length ?? 0}</p>
-
-        {poseData && (
-          <p>
-            Pose visibility estimate:{' '}
-            {Math.round((poseData.confidence ?? 0) * 100)}%
-          </p>
-        )}
-      </div>
-
-      <JointAngleDisplay angles={jointAngles} />
-
-      {config && (
-        <section className="joint-angle-panel">
-          <h2>Repetition Counter</h2>
-
-          <div className="joint-angle-grid">
-            <div className="joint-angle-card">
-              <span>Completed Reps</span>
-              <strong>{repetitions}</strong>
-            </div>
-
-            <div className="joint-angle-card">
-              <span>Movement Phase</span>
-              <strong>{phaseLabel[movementPhase] || movementPhase}</strong>
-            </div>
-          </div>
-
-          <button
-            className="stop-camera-button"
-            onClick={resetRepetitions}
-            style={{ marginTop: 16 }}
-          >
-            Reset Repetitions
-          </button>
-        </section>
-      )}
-
-      <section className="joint-angle-panel">
-        <h2>Form Assessment</h2>
-
-        {!canAssess ? (
-          <p>
-            Live pose tracking and repetition counting are available for this
-            exercise. Detailed form scoring is not enabled for it yet.
-          </p>
-        ) : !formAssessment ? (
-          <p>
-            {poseStatus === 'not-detected'
-              ? 'Move into the camera view so your body can be assessed.'
-              : 'Waiting for visible joint measurements...'}
-          </p>
-        ) : formAssessment.formScore === null ? (
-          <p>
-            {formAssessment.feedback?.[0] ||
-              'More visible joint measurements are needed.'}
-          </p>
-        ) : (
-          <>
-            <div className="joint-angle-grid">
-              <div className="joint-angle-card">
-                <span>Live Form Estimate</span>
-                <strong>{Math.round(formAssessment.formScore)}/100</strong>
-              </div>
-
-              <div className="joint-angle-card">
-                <span>Rating</span>
-                <strong>{formAssessment.rating}</strong>
-              </div>
-
-              <div className="joint-angle-card">
-                <span>Checks Assessed</span>
-                <strong>{formAssessment.assessedFeatures}</strong>
-              </div>
-            </div>
-
-            <h3>Form Feedback</h3>
-
-            {formAssessment.feedback.length ? (
-              <ul>
-                {formAssessment.feedback.map((message) => (
-                  <li key={message}>{message}</li>
-                ))}
-              </ul>
-            ) : (
-              <p>No deviation detected in the measured checks.</p>
-            )}
-
-            <h3>Assessment Details</h3>
-
-            <ul>
-              {Object.entries(formAssessment.features).map(([name, feature]) => (
-                <li key={name}>
-                  <strong>{name.replace(/([A-Z])/g, ' $1')}:</strong>{' '}
-                  {feature.status === 'unavailable'
-                    ? 'Not assessed'
-                    : feature.status === 'warning'
-                      ? 'Needs attention'
-                      : 'Within target range'}
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
       </section>
 
-      <section className="camera-instructions">
-        <h3>Camera positioning</h3>
-
-        <p>
-          {config?.instruction ||
-            'Keep your full body visible and make sure the lighting is good.'}
-        </p>
-
-        {config && (
-          <p>
-            Required view: <strong>{config.cameraView}</strong>
-          </p>
-        )}
-      </section>
-
-      <div
-        style={{
-          display: 'flex',
-          gap: 16,
-          flexWrap: 'wrap',
-          margin: '12px 0',
-        }}
-      >
-        <span>
-          <strong style={{ color: '#22c55e' }}>●</strong> Within target
-        </span>
-        <span>
-          <strong style={{ color: '#ef4444' }}>●</strong> Needs attention
-        </span>
-        <span>
-          <strong style={{ color: '#9ca3af' }}>●</strong> Not assessed
-        </span>
-      </div>
+      <p className="camera-position-hint">
+        Camera view: {config.cameraView}. Keep the required joints visible.
+      </p>
 
       {error && <p className="camera-error">{error}</p>}
 
-      <div className="camera-controls">
+      <div className="workout-controls">
         {cameraStatus === 'idle' ? (
-          <button className="start-camera-button" onClick={startCamera}>
-            Start Camera
+          <button className="start-workout-button" onClick={startCamera}>
+            Start camera
+          </button>
+        ) : cameraStatus === 'loading' ? (
+          <button className="start-workout-button" disabled>
+            Starting…
           </button>
         ) : (
-          <button className="stop-camera-button" onClick={stopCamera}>
-            Stop Camera
-          </button>
+          <>
+            {isPaused ? (
+              <button
+                className="start-workout-button"
+                onClick={resumeWorkout}
+              >
+                Resume
+              </button>
+            ) : (
+              <button
+                className="pause-workout-button"
+                onClick={pauseWorkout}
+              >
+                Pause
+              </button>
+            )}
+
+            <button
+              className="finish-workout-button"
+              onClick={finishSet}
+            >
+              Finish set
+            </button>
+          </>
         )}
       </div>
-    </div>
+    </main>
   );
 }

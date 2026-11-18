@@ -1,16 +1,15 @@
-
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
   --bg: #111827;
-  --card: #1F2937;
+  --card: #1f2937;
   --border: #374151;
-  --accent: #38D9A9;
-  --accent-hover: #62E8BF;
-  --text: #F9FAFB;
-  --muted: #9CA3AF;
-  --warning: #F59E0B;
-  --error: #EF4444;
+  --accent: #38d9a9;
+  --accent-hover: #62e8bf;
+  --text: #f9fafb;
+  --muted: #9ca3af;
+  --warning: #f59e0b;
+  --error: #ef4444;
 }
 
 * {
@@ -20,13 +19,25 @@
 }
 
 body {
+  min-width: 320px;
+  min-height: 100vh;
   background: var(--bg);
   color: var(--text);
   font-family: 'DM Sans', 'Segoe UI', sans-serif;
 }
 
+button,
+input {
+  font: inherit;
+}
+
 button {
-  font-family: inherit;
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .app {
@@ -64,7 +75,7 @@ button {
   letter-spacing: 2px;
 }
 
-/* Home page */
+/* Home */
 
 .main-content {
   max-width: 1200px;
@@ -96,7 +107,8 @@ button {
 
 .hero h1 span,
 .selector-heading h1 span,
-.camera-heading h1 span {
+.setup-card h1 span,
+.report-card h1 span {
   color: var(--accent);
 }
 
@@ -107,8 +119,9 @@ button {
   font-size: 15px;
 }
 
-.start-button {
-  margin-top: 30px;
+.start-button,
+.start-workout-button {
+  margin-top: 25px;
   background: var(--accent);
   color: var(--bg);
   border: none;
@@ -116,18 +129,18 @@ button {
   padding: 15px 23px;
   font-size: 14px;
   font-weight: 800;
-  cursor: pointer;
   transition: background 0.2s, transform 0.2s;
+}
+
+.start-button:hover,
+.start-workout-button:hover {
+  background: var(--accent-hover);
+  transform: translateY(-2px);
 }
 
 .start-button span {
   margin-left: 14px;
   font-size: 18px;
-}
-
-.start-button:hover {
-  background: var(--accent-hover);
-  transform: translateY(-2px);
 }
 
 .hero-note {
@@ -145,7 +158,7 @@ button {
   margin-right: 9px;
 }
 
-/* Home visual card */
+/* Home preview */
 
 .visual-card {
   background: var(--card);
@@ -242,12 +255,15 @@ footer {
   padding: 25px 0;
 }
 
-/* Exercise selector */
+/* Shared page layout */
 
-.selector-page {
+.selector-page,
+.camera-page,
+.setup-page,
+.report-page {
   max-width: 1100px;
   margin: auto;
-  padding: 45px 35px 70px;
+  padding: 35px 25px 70px;
 }
 
 .back-button {
@@ -256,8 +272,6 @@ footer {
   color: var(--muted);
   border-radius: 8px;
   padding: 10px 16px;
-  cursor: pointer;
-  font-family: inherit;
   transition: 0.2s;
 }
 
@@ -265,6 +279,8 @@ footer {
   color: var(--accent);
   border-color: var(--accent);
 }
+
+/* Exercise selector */
 
 .selector-heading {
   margin-top: 55px;
@@ -294,8 +310,6 @@ footer {
   border: 1px solid var(--border);
   border-radius: 9px;
   padding: 12px 22px;
-  cursor: pointer;
-  font-family: inherit;
   transition: 0.2s;
 }
 
@@ -325,8 +339,6 @@ footer {
   border: 1px solid var(--border);
   border-radius: 13px;
   color: var(--text);
-  cursor: pointer;
-  font-family: inherit;
   transition: 0.2s;
 }
 
@@ -367,62 +379,195 @@ footer {
   letter-spacing: 2px;
 }
 
-/* Camera page */
+/* Workout setup */
 
-.camera-page {
-  max-width: 1100px;
-  margin: auto;
-  padding: 45px 35px 70px;
+.setup-page {
+  max-width: 760px;
 }
 
-.camera-page > h1 {
-  font-size: clamp(35px, 5vw, 55px);
-  margin: 35px 0 12px;
-}
-
-.camera-subtitle {
-  color: var(--muted);
-  margin-bottom: 25px;
-}
-
-.camera-box {
-  position: relative;
-  min-height: 380px;
+.setup-card {
+  margin-top: 45px;
+  padding: clamp(24px, 5vw, 45px);
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 15px;
-  overflow: hidden;
+  border-radius: 18px;
 }
 
-.camera-placeholder {
-  min-height: 380px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 25px;
+.setup-card h1,
+.report-card h1 {
+  font-size: clamp(35px, 5vw, 52px);
+  margin: 14px 0;
+  letter-spacing: -2px;
 }
 
-.camera-icon,
-.camera-symbol {
-  font-size: 75px;
+.setup-exercise {
+  color: var(--muted);
+  margin: 12px 0 35px;
+}
+
+.setup-exercise strong {
+  color: var(--text);
+}
+
+.setup-card h2 {
+  font-size: 18px;
+  margin-bottom: 17px;
+}
+
+.rep-options {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.rep-option {
+  background: #172334;
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 18px 10px;
+  font-size: 22px;
+  font-weight: 800;
+  transition: 0.2s;
+}
+
+.rep-option:hover,
+.rep-option.selected {
+  border-color: var(--accent);
   color: var(--accent);
-  margin-bottom: 15px;
+  background: #183b38;
 }
 
-.camera-placeholder p {
+.custom-reps-label {
+  display: block;
+  margin: 28px 0 10px;
   color: var(--muted);
   font-size: 13px;
 }
 
-/* Camera video and skeleton overlay */
+.custom-reps-input {
+  width: 100%;
+  padding: 14px 15px;
+  background: #172334;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text);
+  outline: none;
+}
 
-.camera-box video {
+.custom-reps-input:focus {
+  border-color: var(--accent);
+}
+
+.setup-note {
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.7;
+  margin-top: 22px;
+}
+
+.setup-card .start-workout-button {
+  width: 100%;
+}
+
+/* Workout camera screen */
+
+.workout-camera-page {
+  max-width: 950px;
+}
+
+.workout-topbar {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 22px;
+}
+
+.workout-exercise-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.workout-exercise-name span {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.workout-exercise-name small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.rep-counter-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 22px;
+  margin-bottom: 16px;
+}
+
+.rep-counter-label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+}
+
+.rep-counter-value {
+  margin-top: 4px;
+  font-size: clamp(36px, 7vw, 52px);
+  font-weight: 800;
+  line-height: 1.2;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+.rep-counter-value span {
+  color: var(--muted);
+  font-size: 25px;
+  font-weight: 600;
+}
+
+.rep-progress-track {
+  height: 7px;
+  margin-top: 15px;
+  overflow: hidden;
+  background: #111827;
+  border-radius: 10px;
+}
+
+.rep-progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.workout-camera-frame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  min-height: 250px;
+  overflow: hidden;
+  background: #080e18;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+}
+
+.workout-video {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
   object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.workout-overlay {
+  position: absolute;
+  inset: 0;
+  transform: scaleX(-1);
+  pointer-events: none;
 }
 
 .skeleton-overlay {
@@ -433,196 +578,261 @@ footer {
   pointer-events: none;
 }
 
-/* Camera status and instructions */
-
-.camera-status {
-  position: static;
+.tracking-indicator {
+  position: absolute;
+  left: 14px;
+  top: 14px;
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px 25px;
-  margin-top: 15px;
-  padding: 14px 16px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  color: var(--accent);
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  background: rgba(17, 24, 39, 0.82);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
   font-size: 12px;
-  letter-spacing: 0;
-  line-height: 1.6;
 }
 
-.camera-status p {
-  color: var(--muted);
+.tracking-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--warning);
+  border-radius: 50%;
 }
 
-.camera-status strong {
-  color: var(--accent);
+.tracking-dot.active {
+  background: var(--accent);
 }
 
-.camera-instructions {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 15px;
+.workout-camera-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   padding: 25px;
-  margin-top: 18px;
+  text-align: center;
 }
 
-.camera-instructions h2,
-.camera-instructions h3 {
-  font-size: 19px;
+.camera-placeholder-icon {
+  color: var(--accent);
+  font-size: 65px;
   margin-bottom: 12px;
 }
 
-.camera-instructions p,
-.camera-instructions li {
+.workout-camera-placeholder h2 {
+  font-size: 20px;
+  margin-bottom: 8px;
+}
+
+.workout-camera-placeholder p {
+  max-width: 480px;
   color: var(--muted);
   font-size: 13px;
-  line-height: 1.8;
+  line-height: 1.7;
 }
 
-.camera-instructions ul {
-  padding-left: 20px;
-  margin: 20px 0;
+.paused-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  background: rgba(9, 15, 25, 0.78);
+  text-align: center;
 }
 
-.camera-error {
-  color: var(--error) !important;
-  margin: 15px 0;
+.paused-overlay strong {
+  font-size: 25px;
 }
 
-.camera-controls {
+.paused-overlay span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.camera-position-hint {
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.workout-controls {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 22px;
+  margin-top: 20px;
 }
 
-.start-camera-button,
-.stop-camera-button {
-  border: none;
+.workout-controls button {
+  flex: 1;
+  min-width: 140px;
+  margin-top: 0;
+}
+
+.pause-workout-button,
+.finish-workout-button,
+.report-home-button {
+  padding: 14px 22px;
+  border: 1px solid var(--border);
   border-radius: 9px;
-  padding: 14px 24px;
-  font-size: 14px;
   font-weight: 700;
-  cursor: pointer;
   transition: 0.2s;
 }
 
-.start-camera-button {
-  background: var(--accent);
-  color: var(--bg);
-}
-
-.start-camera-button:hover {
-  background: var(--accent-hover);
-}
-
-.stop-camera-button {
-  background: var(--error);
-  color: white;
-}
-
-.stop-camera-button:hover {
-  background: #dc2626;
-}
-
-.start-button:disabled {
-  opacity: 0.6;
-  cursor: wait;
-}
-
-/* Joint angle and assessment panels */
-
-.joint-angle-panel {
-  margin-top: 20px;
-  padding: 24px;
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 15px;
-}
-
-.joint-angle-panel h2 {
-  margin-bottom: 8px;
-  font-size: 20px;
-}
-
-.joint-angle-panel h3 {
-  margin: 22px 0 12px;
-  font-size: 16px;
-}
-
-.joint-angle-subtitle {
-  margin-bottom: 18px;
-  color: var(--muted);
-  font-size: 13px;
-}
-
-.joint-angle-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(145px, 1fr));
-  gap: 12px;
-  margin-top: 16px;
-}
-
-.joint-angle-card {
-  min-width: 0;
-  padding: 16px;
-  background: #172334;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-}
-
-.joint-angle-card span {
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.joint-angle-card strong {
-  color: var(--accent);
-  font-size: 22px;
-  overflow-wrap: anywhere;
-}
-
-.joint-angle-panel > p {
-  color: var(--muted);
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.joint-angle-panel ul {
-  padding-left: 22px;
-  color: var(--muted);
-}
-
-.joint-angle-panel li {
-  margin-bottom: 9px;
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.joint-angle-panel li strong {
+.pause-workout-button {
+  background: #263548;
   color: var(--text);
 }
 
-/* Assessment feedback states */
+.pause-workout-button:hover {
+  border-color: var(--accent);
+}
 
-.assessment-good {
+.finish-workout-button {
+  background: var(--error);
+  color: white;
+  border-color: var(--error);
+}
+
+.finish-workout-button:hover {
+  background: #dc2626;
+}
+
+.camera-error {
+  margin-top: 14px;
+  color: var(--error);
+  font-size: 13px;
+}
+
+/* Workout report */
+
+.report-page {
+  max-width: 760px;
+}
+
+.report-card {
+  margin-top: 35px;
+  padding: clamp(24px, 5vw, 45px);
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+
+.report-category {
+  display: inline-flex;
+  align-items: center;
+  margin: 18px 0 12px;
+  padding: 10px 17px;
+  border-radius: 9px;
+  background: #263548;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.report-category.excellent,
+.report-category.good {
   color: var(--accent);
 }
 
-.assessment-warning {
+.report-category.needs-improvement {
   color: var(--warning);
 }
 
-.assessment-unavailable {
+.report-category.poor {
+  color: #ff7777;
+}
+
+.report-category.insufficient-data {
   color: var(--muted);
 }
 
-/* Responsive layout */
+.report-description {
+  color: var(--muted);
+  line-height: 1.7;
+  font-size: 14px;
+}
+
+.report-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 25px 0;
+}
+
+.report-details > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 17px;
+  background: #172334;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+.report-details span {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.report-details strong {
+  font-size: 17px;
+  overflow-wrap: anywhere;
+}
+
+.report-feedback {
+  border-top: 1px solid var(--border);
+  padding-top: 24px;
+}
+
+.report-feedback h2 {
+  font-size: 19px;
+  margin-bottom: 14px;
+}
+
+.report-feedback p,
+.report-feedback li {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.8;
+}
+
+.report-feedback ul {
+  padding-left: 20px;
+}
+
+.report-feedback li {
+  margin-bottom: 8px;
+}
+
+.report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 30px;
+}
+
+.report-actions button {
+  flex: 1;
+  min-width: 160px;
+  margin-top: 0;
+}
+
+.report-home-button {
+  background: transparent;
+  color: var(--text);
+}
+
+.report-home-button:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Responsive */
 
 @media (max-width: 750px) {
   .hero {
@@ -644,10 +854,6 @@ footer {
   .nav-tag {
     font-size: 9px;
   }
-
-  .camera-page {
-    padding: 30px 20px;
-  }
 }
 
 @media (max-width: 600px) {
@@ -655,8 +861,11 @@ footer {
     grid-template-columns: 1fr;
   }
 
-  .selector-page {
-    padding: 30px 20px;
+  .selector-page,
+  .camera-page,
+  .setup-page,
+  .report-page {
+    padding: 25px 16px 45px;
   }
 
   .muscle-tabs {
@@ -667,24 +876,41 @@ footer {
     padding: 10px 14px;
   }
 
-  .camera-box,
-  .camera-placeholder {
-    min-height: 240px;
+  .rep-options {
+    gap: 8px;
   }
 
-  .joint-angle-panel {
-    padding: 17px;
-  }
-
-  .joint-angle-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .joint-angle-card {
-    padding: 12px;
-  }
-
-  .joint-angle-card strong {
+  .rep-option {
+    padding: 15px 8px;
     font-size: 19px;
+  }
+
+  .workout-camera-frame {
+    aspect-ratio: 4 / 3;
+    min-height: 220px;
+  }
+
+  .workout-controls {
+    flex-direction: column;
+  }
+
+  .workout-controls button {
+    width: 100%;
+  }
+
+  .report-details {
+    grid-template-columns: 1fr;
+  }
+
+  .report-actions {
+    flex-direction: column;
+  }
+
+  .report-actions button {
+    width: 100%;
+  }
+
+  .workout-topbar {
+    gap: 12px;
   }
 }

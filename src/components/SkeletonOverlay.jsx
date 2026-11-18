@@ -1,4 +1,3 @@
-
 import { useEffect, useRef } from 'react';
 
 const CONNECTIONS = [
@@ -22,7 +21,7 @@ const FEATURE_JOINTS = {
   squatDepth: [23, 24, 25, 26, 27, 28],
   armElevation: [11, 12, 13, 14],
   armSymmetry: [11, 12, 13, 14],
-  elbowStability: [11, 12, 13, 14, 15, 16],
+  elbowPosition: [11, 12, 13, 14, 15, 16],
 };
 
 export default function SkeletonOverlay({ landmarks, assessment }) {
@@ -43,6 +42,7 @@ export default function SkeletonOverlay({ landmarks, assessment }) {
 
     canvas.width = Math.round(width * ratio);
     canvas.height = Math.round(height * ratio);
+
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
@@ -50,7 +50,8 @@ export default function SkeletonOverlay({ landmarks, assessment }) {
 
     const visible = (index) => {
       const point = landmarks[index];
-      return (
+
+      return Boolean(
         point &&
         Number.isFinite(point.x) &&
         Number.isFinite(point.y) &&
@@ -61,18 +62,23 @@ export default function SkeletonOverlay({ landmarks, assessment }) {
     const jointStatuses = {};
 
     Object.entries(assessment?.features || {}).forEach(([name, feature]) => {
-      if (feature.status !== 'good' && feature.status !== 'warning') return;
+      if (feature.status !== 'good' && feature.status !== 'warning') {
+        return;
+      }
 
       const joints = FEATURE_JOINTS[name] || [];
+
       joints.forEach((index) => {
-        const status = feature.status;
-        if (!jointStatuses[index] || status === 'warning') {
-          jointStatuses[index] = status;
+        if (
+          !jointStatuses[index] ||
+          feature.status === 'warning'
+        ) {
+          jointStatuses[index] = feature.status;
         }
       });
     });
 
-    const pointColor = (index) => {
+    const getPointColor = (index) => {
       if (jointStatuses[index] === 'good') return '#22c55e';
       if (jointStatuses[index] === 'warning') return '#ef4444';
       return '#e5e7eb';
@@ -95,7 +101,7 @@ export default function SkeletonOverlay({ landmarks, assessment }) {
           ? '#ef4444'
           : startStatus === 'good' && endStatus === 'good'
             ? '#22c55e'
-            : '#38d9a9';
+            : '#e5e7eb';
 
       ctx.stroke();
     });
@@ -105,8 +111,9 @@ export default function SkeletonOverlay({ landmarks, assessment }) {
 
       ctx.beginPath();
       ctx.arc(point.x * width, point.y * height, 5, 0, Math.PI * 2);
-      ctx.fillStyle = pointColor(index);
+      ctx.fillStyle = getPointColor(index);
       ctx.fill();
+
       ctx.lineWidth = 2;
       ctx.strokeStyle = '#111827';
       ctx.stroke();
@@ -116,15 +123,8 @@ export default function SkeletonOverlay({ landmarks, assessment }) {
   return (
     <canvas
       ref={canvasRef}
+      className="skeleton-overlay"
       aria-label="Live augmented reality pose and form overlay"
-      style={{
-        position: 'absolute',
-        inset: 0,
-        width: '100%',
-        height: '100%',
-        zIndex: 5,
-        pointerEvents: 'none',
-      }}
     />
   );
 }

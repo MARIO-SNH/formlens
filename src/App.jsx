@@ -1,17 +1,37 @@
-
 import { useState } from 'react';
 import './App.css';
+
 import ExerciseSelector from './components/ExerciseSelector';
+import WorkoutSetup from './components/WorkoutSetup';
 import CameraView from './components/CameraView';
+import WorkoutReport from './components/WorkoutReport';
 
 function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [selectedExercise, setSelectedExercise] = useState('');
+  const [targetReps, setTargetReps] = useState(12);
+  const [workoutReport, setWorkoutReport] = useState(null);
 
-  const handleExerciseSelect = (exercise) => {
+  function handleExerciseSelect(exercise) {
     setSelectedExercise(exercise);
+    setCurrentPage('setup');
+  }
+
+  function handleStartWorkout(reps) {
+    setTargetReps(reps);
+    setWorkoutReport(null);
     setCurrentPage('camera');
-  };
+  }
+
+  function handleWorkoutComplete(report) {
+    setWorkoutReport(report);
+    setCurrentPage('report');
+  }
+
+  function handleRepeatWorkout() {
+    setWorkoutReport(null);
+    setCurrentPage('setup');
+  }
 
   if (currentPage === 'exercises') {
     return (
@@ -22,11 +42,33 @@ function App() {
     );
   }
 
+  if (currentPage === 'setup') {
+    return (
+      <WorkoutSetup
+        exercise={selectedExercise}
+        onBack={() => setCurrentPage('exercises')}
+        onStart={handleStartWorkout}
+      />
+    );
+  }
+
   if (currentPage === 'camera') {
     return (
       <CameraView
         exercise={selectedExercise}
-        onBack={() => setCurrentPage('exercises')}
+        targetReps={targetReps}
+        onBack={() => setCurrentPage('setup')}
+        onComplete={handleWorkoutComplete}
+      />
+    );
+  }
+
+  if (currentPage === 'report') {
+    return (
+      <WorkoutReport
+        report={workoutReport}
+        onRepeat={handleRepeatWorkout}
+        onHome={() => setCurrentPage('home')}
       />
     );
   }
@@ -55,17 +97,15 @@ function App() {
             </h1>
 
             <p>
-              Analyze your exercise technique in real time.
-              Track your movement, understand your form,
-              and improve every repetition with AI-powered
-              feedback.
+              Practice your exercises with live camera-based
+              body tracking and movement feedback.
             </p>
 
             <button
               className="start-button"
               onClick={() => setCurrentPage('exercises')}
             >
-              Start assessment <span>→</span>
+              Start workout <span>→</span>
             </button>
 
             <div className="hero-note">
@@ -77,7 +117,7 @@ function App() {
           <div className="visual-card">
             <div className="visual-header">
               <span>BODY TRACKING</span>
-              <span className="live-tag">● LIVE PREVIEW</span>
+              <span className="live-tag">● READY</span>
             </div>
 
             <div className="skeleton-placeholder">
@@ -99,26 +139,26 @@ function App() {
         <section className="features">
           <div className="section-heading">
             <span>WHAT FORMLENS DOES</span>
-            <h2>Everything you need to move better.</h2>
+            <h2>Focus on better movement.</h2>
           </div>
 
           <div className="feature-grid">
             <div className="feature-card">
               <span className="feature-icon">◎</span>
-              <h3>Pose Detection</h3>
-              <p>Track body landmarks using camera-based AI technology.</p>
+              <h3>Live Body Tracking</h3>
+              <p>Track body landmarks using your camera.</p>
             </div>
 
             <div className="feature-card">
               <span className="feature-icon">⌁</span>
-              <h3>Joint Analysis</h3>
-              <p>Understand joint angles and movement patterns during exercise.</p>
+              <h3>AR Form Overlay</h3>
+              <p>See body tracking and correction indicators on screen.</p>
             </div>
 
             <div className="feature-card">
               <span className="feature-icon">↗</span>
-              <h3>Form Assessment</h3>
-              <p>Receive movement-quality scores and actionable feedback.</p>
+              <h3>Workout Feedback</h3>
+              <p>Review simple feedback after completing your set.</p>
             </div>
           </div>
         </section>

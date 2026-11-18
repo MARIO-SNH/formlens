@@ -1,4 +1,3 @@
-
 export function createRepCounter({
   bottomThreshold,
   topThreshold,
@@ -21,12 +20,13 @@ export function createRepCounter({
   let repFrames = 0;
 
   function update(angle) {
-    if (
-      !Number.isFinite(angle) ||
-      angle < 0 ||
-      angle > 180
-    ) {
-      return { repetitions, phase, counted: false, valid: false };
+    if (!Number.isFinite(angle) || angle < 0 || angle > 180) {
+      return {
+        repetitions,
+        phase,
+        counted: false,
+        valid: false,
+      };
     }
 
     let counted = false;
@@ -58,11 +58,15 @@ export function createRepCounter({
     } else {
       bottomFrames = 0;
       topFrames = 0;
-
       phase = hasReachedBottom ? 'extending' : 'flexing';
     }
 
-    return { repetitions, phase, counted, valid: true };
+    return {
+      repetitions,
+      phase,
+      counted,
+      valid: true,
+    };
   }
 
   function reset() {
