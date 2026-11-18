@@ -1,16 +1,66 @@
-# React + Vite
+# FormLens
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+AI-powered exercise form assessment application.
 
-Currently, two official plugins are available:
+FormLens analyzes exercise movements using computer vision and provides feedback to help users improve their exercise technique.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- Real-time exercise pose detection.
+- Body landmark tracking.
+- Joint angle calculations.
+- Repetition counting.
+- Movement and symmetry analysis.
+- Exercise form scoring.
+- Corrective feedback.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Technology Stack
 
-## Expanding the Oxlint configuration
+- React
+- Vite
+- JavaScript
+- MediaPipe Pose Landmarker
+- Three.js
+- CSS
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Exercise Categories
+
+### Chest
+- Push-ups
+- Wide-grip push-ups
+
+### Back
+- Bent-over rows
+- Reverse fly
+
+### Shoulders
+- Shoulder press
+- Lateral raises
+
+### Arms
+- Bicep curls
+- Overhead tricep extensions
+
+### Legs
+- Squats
+- Lunges
+
+## Project Structure
+
+```text
+formlens/
+├── public/
+├── src/
+│   ├── ai/
+│   ├── biomechanics/
+│   ├── exercises/
+│   ├── scoring/
+│   ├── components/
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
+├── package.json
+└── README.md
+
+
+```
